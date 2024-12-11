@@ -1,0 +1,130 @@
+import re
+from collections import Counter
+
+# Função para carregar e pré-processar as mensagens
+def carregar_mensagens(arquivo, filtro):
+    try:
+        with open(arquivo, 'r', encoding='utf-8') as f:
+            linhas = f.readlines()
+
+        mensagens = []
+        for linha in linhas:
+            if filtro.lower() in linha.lower():
+                # Remove data/hora e filtra
+                linha_sem_data_hora = re.sub(r"^\d{2}/\d{2}/\d{4} \d{2}:\d{2} - ", '', linha).strip()
+                mensagens.append(linha_sem_data_hora)
+
+        return mensagens
+
+    except FileNotFoundError:
+        print("Erro: Arquivo não encontrado. Verifique o caminho fornecido.")
+        return []
+    except Exception as e:
+        print(f"Ocorreu um erro: {e}")
+        return []
+
+# Função para analisar o comportamento e gerar um padrão de conversa
+def analisar_comportamento(mensagens):
+    termos_carinho = []
+    termos_raiva = []
+    termos_assertivos = []
+    termos_humor = []
+    emojis = []
+
+    # Palavras e emojis que vamos buscar
+    carinho_keywords = ["amor", "querido", "gato", "lindo"]
+    raiva_keywords = ["chateada", "irritada", "frustrada", "ódio"]
+    assertividade_keywords = ["quero", "preciso", "importante", "devo"]
+    humor_keywords = ["kkk", "brincadeira", "rsrs", "😂"]
+    emoji_list = ["❤️", "🥺", "😊", "😡", "😤", "😂"]
+
+    for msg in mensagens:
+        # Análise de termos de carinho
+        for keyword in carinho_keywords:
+            if keyword in msg.lower():
+                termos_carinho.append(keyword)
+
+        # Análise de termos de raiva
+        for keyword in raiva_keywords:
+            if keyword in msg.lower():
+                termos_raiva.append(keyword)
+
+        # Análise de termos de assertividade
+        for keyword in assertividade_keywords:
+            if keyword in msg.lower():
+                termos_assertivos.append(keyword)
+
+        # Análise de humor
+        for keyword in humor_keywords:
+            if keyword in msg.lower():
+                termos_humor.append(keyword)
+
+        # Coleta de emojis
+        for emoji in emoji_list:
+            if emoji in msg:
+                emojis.append(emoji)
+
+    # Contagem dos termos coletados
+    comportamento = {
+        "termos_carinho": Counter(termos_carinho),
+        "termos_raiva": Counter(termos_raiva),
+        "termos_assertivos": Counter(termos_assertivos),
+        "termos_humor": Counter(termos_humor),
+        "emojis": Counter(emojis)
+    }
+
+    return comportamento
+
+# Função para gerar um padrão de conversa baseado no comportamento analisado
+def gerar_padrao_conversa(comportamento):
+    padrao = "**Padrão de Conversa da Personalidade Baseado no Comportamento:**\n\n"
+
+    if comportamento["termos_carinho"]:
+        padrao += "1. **Termos de Carinho:**\n"
+        for termo, count in comportamento["termos_carinho"].items():
+            padrao += f"   - Usou o termo '{termo}' {count} vezes.\n"
+        padrao += "\n"
+
+    if comportamento["termos_raiva"]:
+        padrao += "2. **Expressões de Raiva:**\n"
+        for termo, count in comportamento["termos_raiva"].items():
+            padrao += f"   - Usou o termo '{termo}' {count} vezes.\n"
+        padrao += "\n"
+
+    if comportamento["termos_assertivos"]:
+        padrao += "3. **Expressões de Assertividade:**\n"
+        for termo, count in comportamento["termos_assertivos"].items():
+            padrao += f"   - Usou o termo '{termo}' {count} vezes.\n"
+        padrao += "\n"
+
+    if comportamento["termos_humor"]:
+        padrao += "4. **Humor e Brincadeiras:**\n"
+        for termo, count in comportamento["termos_humor"].items():
+            padrao += f"   - Usou a expressão '{termo}' {count} vezes.\n"
+        padrao += "\n"
+
+    if comportamento["emojis"]:
+        padrao += "5. **Emojis:**\n"
+        for emoji, count in comportamento["emojis"].items():
+            padrao += f"   - Usou o emoji '{emoji}' {count} vezes.\n"
+
+    return padrao
+
+# Função principal para processar mensagens e gerar o padrão de conversa
+def processar_mensagens(arquivo, filtro):
+    mensagens = carregar_mensagens(arquivo, filtro)
+    if not mensagens:
+        return "Nenhuma mensagem encontrada para o filtro especificado."
+
+    comportamento = analisar_comportamento(mensagens)
+    padrao_conversa = gerar_padrao_conversa(comportamento)
+
+    return padrao_conversa
+
+# Entrada de dados do usuário
+arquivo_txt = input("Digite o caminho do arquivo de texto com as mensagens (ex.: /content/Conversa.txt): ")
+filtro_de_busca = input("Digite o nome ou termo para filtrar as mensagens (ex.: Adri): ")
+
+# Processa as mensagens com os dados fornecidos
+resultado = processar_mensagens(arquivo_txt, filtro_de_busca)
+print(resultado)
